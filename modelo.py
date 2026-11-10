@@ -76,8 +76,6 @@ def puntaje(modelo, tx: dict):
     X = pd.DataFrame([fila])[FEATURES]
     return float(modelo.predict_proba(X)[0, 1])
 
-
-# ---------------- PRUEBAS DE ESTRES ----------------
 def prueba_datos_manipulados(modelo, test, umbral=0.5):
     """El defraudador oculta pais, dispositivo y baja el monto para no ser detectado."""
     legit = test[test["fraude"] == 0]
