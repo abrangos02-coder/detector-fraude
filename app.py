@@ -19,6 +19,10 @@ client = OpenAI(
     base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
 ) if api_key else None
 
+# Modelos a probar en orden (se usa el primero que funcione)
+MODELOS = ["gemini-flash-lite-latest", "gemini-flash-latest",
+           "gemini-3.5-flash-lite", "gemini-3-flash-preview"]
+
 
 @st.cache_resource
 def cargar_modelo():
@@ -71,9 +75,6 @@ de fraude de {prob:.0%} para esta transaccion:
 - Transacciones en la ultima hora: {tx_h} | Antiguedad de la cuenta: {antig} dias
 Explica en maximo 4 lineas, en espanol sencillo, por que es o no sospechosa y
 recomienda una accion (aprobar, pedir verificacion de identidad o bloquear)."""
-            
-                        MODELOS = ["gemini-flash-lite-latest", "gemini-flash-latest",
-                       "gemini-3.5-flash-lite", "gemini-3-flash-preview"]
             with st.spinner("La IA está redactando la explicación..."):
                 texto, ultimo_error = None, None
                 for nombre_modelo in MODELOS:
@@ -90,6 +91,9 @@ recomienda una accion (aprobar, pedir verificacion de identidad o bloquear)."""
                     st.info(texto)
                 else:
                     st.warning(f"No se pudo usar la IA: {ultimo_error}")
+        else:
+            st.warning("Falta la API key, por eso no hay explicación de la IA.")
+
 with tab2:
     st.subheader("Pruebas de estrés del modelo")
     st.write("Se evalúa si el modelo resiste intentos de engaño y fraudes nuevos.")
@@ -110,6 +114,7 @@ with tab2:
         cols = st.columns(len(vol))
         for col, (k, v) in zip(cols, vol.items()):
             col.metric(k, v)
+
 with tab3:
     st.subheader("Rendimiento sobre datos de prueba (separados del entrenamiento)")
     res = m.metricas(modelo, test, umbral)
