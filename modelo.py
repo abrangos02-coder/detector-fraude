@@ -1,4 +1,3 @@
-"""Modelo de deteccion de fraude: datos sinteticos, entrenamiento y pruebas de estres."""
 import time
 import numpy as np
 import pandas as pd
@@ -9,14 +8,12 @@ from sklearn.metrics import confusion_matrix
 FEATURES = ["monto", "ratio_monto", "hora", "pais_distinto",
             "dispositivo_nuevo", "tx_ultima_hora", "antiguedad_dias"]
 
-
 def generar_datos(n=6000, fraude_pct=0.06, seed=42):
     """Crea transacciones legitimas y fraudulentas (datos sinteticos)."""
     rng = np.random.default_rng(seed)
     n_f = int(n * fraude_pct)
     n_l = n - n_f
-
-    # Transacciones legitimas
+            
     prom_l = rng.lognormal(4.2, 0.5, n_l)
     monto_l = prom_l * rng.lognormal(0, 0.4, n_l)
     hora_l = np.clip(rng.normal(15, 4, n_l), 0, 23).astype(int)
@@ -28,7 +25,6 @@ def generar_datos(n=6000, fraude_pct=0.06, seed=42):
         "antiguedad_dias": rng.uniform(30, 3000, n_l),
         "fraude": 0})
 
-    # Transacciones fraudulentas
     prom_f = rng.lognormal(4.2, 0.5, n_f)
     monto_f = prom_f * rng.lognormal(1.5, 0.8, n_f)
     noche = rng.random(n_f) < 0.6
@@ -100,7 +96,6 @@ def prueba_fraude_nuevo(modelo, test, umbral=0.5, seed=7):
         "tx_ultima_hora": rng.integers(15, 30, n),
         "antiguedad_dias": rng.uniform(30, 3000, n), "fraude": 1})
     return metricas(modelo, pd.concat([legit, nuevo]), umbral)
-
 
 def prueba_volumen(modelo, test, n_tx=10000):
     """Muchas transacciones a la vez + latencia por transaccion individual."""
