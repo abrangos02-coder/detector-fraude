@@ -71,18 +71,25 @@ de fraude de {prob:.0%} para esta transaccion:
 - Transacciones en la ultima hora: {tx_h} | Antiguedad de la cuenta: {antig} dias
 Explica en maximo 4 lineas, en espanol sencillo, por que es o no sospechosa y
 recomienda una accion (aprobar, pedir verificacion de identidad o bloquear)."""
+            
+                        MODELOS = ["gemini-flash-lite-latest", "gemini-flash-latest",
+                       "gemini-3.5-flash-lite", "gemini-3-flash-preview"]
             with st.spinner("La IA está redactando la explicación..."):
-                try:
-                    r = client.chat.completions.create(
-                        model="gemini-2.5-flash",
-                        messages=[{"role": "user", "content": prompt}])
+                texto, ultimo_error = None, None
+                for nombre_modelo in MODELOS:
+                    try:
+                        r = client.chat.completions.create(
+                            model=nombre_modelo,
+                            messages=[{"role": "user", "content": prompt}])
+                        texto = r.choices[0].message.content
+                        break
+                    except Exception as e:
+                        ultimo_error = e
+                if texto:
                     st.subheader("Explicación de la IA")
-                    st.info(r.choices[0].message.content)
-                except Exception as e:
-                    st.warning(f"No se pudo usar la IA: {e}")
-        else:
-            st.warning("Falta la API key, por eso no hay explicación de la IA.")
-
+                    st.info(texto)
+                else:
+                    st.warning(f"No se pudo usar la IA: {ultimo_error}")
 with tab2:
     st.subheader("Pruebas de estrés del modelo")
     st.write("Se evalúa si el modelo resiste intentos de engaño y fraudes nuevos.")
