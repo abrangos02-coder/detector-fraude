@@ -9,12 +9,15 @@ import modelo as m
 load_dotenv()
 st.set_page_config(page_title="Detector de Fraude en Pagos en Linea", page_icon="🏦", layout="wide")
 
-# ---- API key: Streamlit Cloud (secrets) o archivo .env local ----
 try:
-    api_key = st.secrets["OPENAI_API_KEY"]
+    api_key = st.secrets["GEMINI_API_KEY"]
 except Exception:
-    api_key = os.getenv("OPENAI_API_KEY")
-client = OpenAI(api_key=api_key) if api_key else None
+    api_key = os.getenv("GEMINI_API_KEY")
+
+client = OpenAI(
+    api_key=api_key,
+    base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+) if api_key else None
 
 
 @st.cache_resource
@@ -25,15 +28,14 @@ def cargar_modelo():
 modelo, test = cargar_modelo()
 
 st.title("🏦 Detección de fraudes en pagos en línea")
-st.caption("MVP: modelo de Machine Learning (Random Forest) + explicación con IA (OpenAI)")
+st.caption("MVP: modelo de Machine Learning (Random Forest) + explicación con IA (Gemini)")
 
 umbral = st.sidebar.slider("Umbral de alerta", 0.1, 0.9, 0.5, 0.05,
                            help="Mas bajo = detecta mas fraudes pero genera mas falsos positivos")
-st.sidebar.write("Estado de OpenAI:", "✅ conectada" if client else "❌ sin API key")
+st.sidebar.write("Estado de la IA:", "✅ conectada" if client else "❌ sin API key")
 
 tab1, tab2, tab3 = st.tabs(["🔍 Monitor en tiempo real", "🧪 Pruebas de estrés", "📊 Rendimiento del modelo"])
 
-# ------------------------------------------------------------------
 with tab1:
     st.subheader("Analizar una transacción")
     c1, c2, c3 = st.columns(3)
@@ -72,16 +74,15 @@ recomienda una accion (aprobar, pedir verificacion de identidad o bloquear)."""
             with st.spinner("La IA está redactando la explicación..."):
                 try:
                     r = client.chat.completions.create(
-                        model="gpt-4o-mini",
+                        model="gemini-2.5-flash",
                         messages=[{"role": "user", "content": prompt}])
                     st.subheader("Explicación de la IA")
                     st.info(r.choices[0].message.content)
                 except Exception as e:
-                    st.warning(f"No se pudo usar OpenAI: {e}")
+                    st.warning(f"No se pudo usar la IA: {e}")
         else:
-            st.warning("Falta la API key de OpenAI, por eso no hay explicación de la IA.")
+            st.warning("Falta la API key, por eso no hay explicación de la IA.")
 
-# ------------------------------------------------------------------
 with tab2:
     st.subheader("Pruebas de estrés del modelo")
     st.write("Se evalúa si el modelo resiste intentos de engaño y fraudes nuevos.")
@@ -102,8 +103,6 @@ with tab2:
         cols = st.columns(len(vol))
         for col, (k, v) in zip(cols, vol.items()):
             col.metric(k, v)
-
-# ------------------------------------------------------------------
 with tab3:
     st.subheader("Rendimiento sobre datos de prueba (separados del entrenamiento)")
     res = m.metricas(modelo, test, umbral)
